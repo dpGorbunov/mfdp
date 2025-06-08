@@ -240,93 +240,94 @@ const SmartShop = () => {
   };
 
 
-  const loadMainPageData = async () => {
+const loadMainPageData = async () => {
+  try {
+    setIsLoading(true);
+
+    // Загружаем коллаборативные рекомендации БЕЗ исключения популярных
     try {
-      setIsLoading(true);
+      // Сначала пробуем загрузить БЕЗ фильтрации
+      const recommendationsData = await apiRequest('/recommendations/?model_type=collaborative&limit=10');
 
-      // Загружаем коллаборативные рекомендации с исключением популярных товаров
-      try {
-        const recommendationsData = await apiRequest('/recommendations/?model_type=collaborative&limit=10&exclude_popular=true');
-
-        // Проверяем, что это действительно персональные рекомендации, а не fallback
-        if (recommendationsData.length > 0 && recommendationsData[0].model_type === 'collaborative') {
-          setRecommendations(recommendationsData);
-          localStorage.setItem('recommendations', JSON.stringify(recommendationsData));
+      if (recommendationsData.length > 0 && recommendationsData[0].model_type === 'collaborative') {
+        setRecommendations(recommendationsData);
+        localStorage.setItem('recommendations', JSON.stringify(recommendationsData));
+      } else {
+        // Если рекомендаций нет, пробуем с exclude_popular=true как fallback
+        const filteredRecommendations = await apiRequest('/recommendations/?model_type=collaborative&limit=10&exclude_popular=true');
+        if (filteredRecommendations.length > 0) {
+          setRecommendations(filteredRecommendations);
+          localStorage.setItem('recommendations', JSON.stringify(filteredRecommendations));
         } else {
           setRecommendations([]);
           localStorage.removeItem('recommendations');
         }
-      } catch (error) {
-        console.error('Failed to load recommendations:', error);
-        setRecommendations([]);
-        localStorage.removeItem('recommendations');
       }
-
-      // Загружаем популярные товары через endpoint рекомендаций
-      try {
-        const popularData = await apiRequest('/recommendations/?model_type=popular&limit=10');
-        setPopularProducts(popularData);
-        // Сохраняем в localStorage
-        localStorage.setItem('popularProducts', JSON.stringify(popularData));
-      } catch (error) {
-        console.error('Failed to load popular products:', error);
-        // Если не удалось загрузить через рекомендации, пробуем через продукты
-        try {
-          const productsData = await apiRequest('/products/?limit=10');
-          // Преобразуем формат для совместимости
-          const formattedProducts = productsData.map(p => ({
-            product_id: p.id,
-            product_name: p.name,
-            aisle_name: p.aisle_name,
-            department_name: p.department_name,
-            score: 0.5
-          }));
-          setPopularProducts(formattedProducts);
-        } catch (err) {
-          console.error('Failed to load products:', err);
-          setPopularProducts([]);
-        }
-      }
-
-      // Загружаем все товары для поиска
-      try {
-        const allProductsData = await apiRequest('/products/?limit=100');
-        setAllProducts(allProductsData);
-      } catch (error) {
-        console.error('Failed to load all products:', error);
-      }
-
-      // Загружаем статистику пользователя
-      try {
-        const userPreferences = await apiRequest('/recommendations/preferences');
-        setUserStats({
-          favoriteCategory: userPreferences.favorite_departments[0] || 'Не определено',
-          monthlyOrders: userPreferences.total_orders,
-          frequentProducts: userPreferences.most_ordered_products.slice(0, 3).map(p => p.name)
-        });
-
-        // Сохраняем статистику в localStorage
-        localStorage.setItem('userStats', JSON.stringify({
-          favoriteCategory: userPreferences.favorite_departments[0] || 'Не определено',
-          monthlyOrders: userPreferences.total_orders,
-          frequentProducts: userPreferences.most_ordered_products.slice(0, 3).map(p => p.name)
-        }));
-      } catch (error) {
-        console.error('Failed to load user preferences:', error);
-        // Пробуем загрузить из localStorage
-        const savedStats = localStorage.getItem('userStats');
-        if (savedStats) {
-          setUserStats(JSON.parse(savedStats));
-        }
-      }
-
     } catch (error) {
-      console.error('Failed to load main page data:', error);
-      showNotification('Ошибка загрузки данных', 'error');
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to load recommendations:', error);
+      setRecommendations([]);
+      localStorage.removeItem('recommendations');
     }
-  };
+
+    // Загружаем популярные товары через endpoint рекомендаций
+    try {
+      const popularData = await apiRequest('/recommendations/?model_type=popular&limit=10');
+      setPopularProducts(popularData);
+      localStorage.setItem('popularProducts', JSON.stringify(popularData));
+    } catch (error) {
+      console.error('Failed to load popular products:', error);
+      try {
+        const productsData = await apiRequest('/products/?limit=10');
+        const formattedProducts = productsData.map(p => ({
+          product_id: p.id,
+          product_name: p.name,
+          aisle_name: p.aisle_name,
+          department_name: p.department_name,
+          score: 0.5
+        }));
+        setPopularProducts(formattedProducts);
+      } catch (err) {
+        console.error('Failed to load products:', err);
+        setPopularProducts([]);
+      }
+    }
+
+    // Загружаем все товары для поиска
+    try {
+      const allProductsData = await apiRequest('/products/?limit=100');
+      setAllProducts(allProductsData);
+    } catch (error) {
+      console.error('Failed to load all products:', error);
+    }
+
+    // Загружаем статистику пользователя
+    try {
+      const userPreferences = await apiRequest('/recommendations/preferences');
+      setUserStats({
+        favoriteCategory: userPreferences.favorite_departments[0] || 'Не определено',
+        monthlyOrders: userPreferences.total_orders,
+        frequentProducts: userPreferences.most_ordered_products.slice(0, 3).map(p => p.name)
+      });
+      localStorage.setItem('userStats', JSON.stringify({
+        favoriteCategory: userPreferences.favorite_departments[0] || 'Не определено',
+        monthlyOrders: userPreferences.total_orders,
+        frequentProducts: userPreferences.most_ordered_products.slice(0, 3).map(p => p.name)
+      }));
+    } catch (error) {
+      console.error('Failed to load user preferences:', error);
+      const savedStats = localStorage.getItem('userStats');
+      if (savedStats) {
+        setUserStats(JSON.parse(savedStats));
+      }
+    }
+
+  } catch (error) {
+    console.error('Failed to load main page data:', error);
+    showNotification('Ошибка загрузки данных', 'error');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const searchProducts = async (query) => {
     try {
@@ -471,37 +472,58 @@ const SmartShop = () => {
     showNotification('Заказ очищен');
   };
 
-  const submitOrder = async () => {
-    if (cart.length === 0) {
-      showNotification('Корзина пуста', 'error');
-      return;
-    }
+const submitOrder = async () => {
+  if (cart.length === 0) {
+    showNotification('Корзина пуста', 'error');
+    return;
+  }
 
-    setIsLoading(true);
-    try {
-      const orderData = await apiRequest('/orders/', {
-        method: 'POST',
-        body: JSON.stringify({
-          items: cart.map(item => ({
-            product_id: item.id,
-            quantity: item.quantity
-          }))
-        })
-      });
+  setIsLoading(true);
+  try {
+    const orderData = await apiRequest('/orders/', {
+      method: 'POST',
+      body: JSON.stringify({
+        items: cart.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity
+        }))
+      })
+    });
 
-      setOrderConfirmModal({ isOpen: true, data: orderData });
-      setCart([]);
+    setOrderConfirmModal({ isOpen: true, data: orderData });
+    setCart([]);
 
-      // Перезагружаем данные после заказа для обновления статистики
-      setTimeout(() => {
-        loadMainPageData();
-      }, 1000);
-    } catch (error) {
-      showNotification(error.message, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    // Ждем немного, чтобы дать время серверу обновить рекомендации
+    setTimeout(async () => {
+      try {
+        // Перезагружаем рекомендации БЕЗ параметра exclude_popular
+        const newRecommendations = await apiRequest('/recommendations/?model_type=collaborative&limit=10');
+
+        if (newRecommendations.length > 0) {
+          setRecommendations(newRecommendations);
+          localStorage.setItem('recommendations', JSON.stringify(newRecommendations));
+          showNotification('Рекомендации обновлены на основе вашего заказа!');
+        }
+
+        // Также обновляем статистику пользователя
+        const userPreferences = await apiRequest('/recommendations/preferences');
+        setUserStats({
+          favoriteCategory: userPreferences.favorite_departments[0] || 'Не определено',
+          monthlyOrders: userPreferences.total_orders,
+          frequentProducts: userPreferences.most_ordered_products.slice(0, 3).map(p => p.name)
+        });
+
+      } catch (error) {
+        console.error('Failed to reload recommendations:', error);
+      }
+    }, 2000); // Ждем 2 секунды
+
+  } catch (error) {
+    showNotification(error.message, 'error');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
 
   const generateRecommendations = async () => {

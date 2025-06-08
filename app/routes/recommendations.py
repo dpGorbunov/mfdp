@@ -56,7 +56,7 @@ async def get_recommendations(
             .join(OrderItem, Product.id == OrderItem.product_id)
             .group_by(Product.id)
             .order_by(func.count(OrderItem.id).desc())
-            .limit(50)  # Берем топ-50 популярных
+            .limit(10)  # Берем топ-50 популярных
         ).all()
 
         popular_product_ids = list(popular_query)
