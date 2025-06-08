@@ -63,7 +63,7 @@ Smart Shop - это современная система рекомендаци
 
 ```bash
 git clone <repository-url>
-cd smart-shop
+cd mfdp
 ```
 
 ### 2. Настройка Kaggle API
