@@ -1,2 +1,9 @@
 .ipynb_checkpoints/
 .idea/
+venv/
+dump_project.sh
+project_dump.txt
+App(Автономный интерфейс).js
+data/
+__pycache__
+.env
