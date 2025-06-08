@@ -1,0 +1,118 @@
+version: "3"
+services: 
+  app:
+    build: ./app/
+    image: event-planner-api:latest 
+    container_name: event-planner-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - event-planner-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    ports:
+      - "8080:8080"  # Добавлено для локальной разработки
+
+  ml_worker:
+    build: ./ml_worker/
+    image: event-planner-ml-worker:latest
+    container_name: event-planner-ml-worker
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_USER=rmuser
+      - RABBITMQ_PASS=rmpassword
+    volumes:
+      - ./ml_worker:/app
+    depends_on:
+      db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - event-planner-network
+
+  web:
+    image: nginx:latest
+    container_name: event-planner-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"  # Изменен порт на 8000, так как фронтенд ожидает API на этом порту
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - event-planner-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: event-planner-db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"  # Добавлено для доступа к БД
+    networks:
+      - event-planner-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: event-planner-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - event-planner-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3.13.1-management-alpine
+    container_name: rabbitmq_for_planner
+    hostname: rabbitmq
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=rmuser
+      - RABBITMQ_DEFAULT_PASS=rmpassword
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "15672:15672"  # Management UI
+      - "5672:5672"    # AMQP protocol
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+    networks:
+      - event-planner-network
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  event-planner-network:
+    name: event-planner-network
+    driver: bridge
