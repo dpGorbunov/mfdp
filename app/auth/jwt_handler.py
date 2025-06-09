@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from fastapi import HTTPException, status
 from jose import jwt, JWTError
-from app.database.config import get_settings
+from database.config import get_settings
 
 # Получаем настройки приложения
 settings = get_settings()

@@ -4,10 +4,10 @@ from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 
 if TYPE_CHECKING:
-    from app.models.user import User
-    from app.models.order_item import OrderItem, OrderItemRead
+    from models.user import User
+    from models.order_item import OrderItem, OrderItemRead
 else:
-    from app.models.order_item import OrderItem, OrderItemRead
+    from models.order_item import OrderItem, OrderItemRead
 
 class OrderBase(SQLModel):
     """Базовая модель заказа"""

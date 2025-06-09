@@ -8,6 +8,8 @@ data/
 __pycache__
 .env
 
+project_files.txt
+collect_git_files.sh
 
 # Python
 __pycache__/

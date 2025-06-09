@@ -2,11 +2,11 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlmodel import Session, select, or_
-from app.database.database import get_session
-from app.schemas.recommendation import ProductDetail
-from app.models.product import Product
-from app.models.department import Department
-from app.models.aisle import Aisle
+from database.database import get_session
+from schemas.recommendation import ProductDetail
+from models.product import Product
+from models.department import Department
+from models.aisle import Aisle
 
 router = APIRouter(prefix="/products", tags=["products"])
 

@@ -4,15 +4,15 @@ import pandas as pd
 import logging
 
 # Импорт всех моделей для создания таблиц
-from app.models.user import User
-from app.models.product import Product
-from app.models.department import Department
-from app.models.aisle import Aisle
-from app.models.orders import Order
-from app.models.order_item import OrderItem
-from app.models.recommendation import Recommendation
-from app.database.database import get_database_engine
-from app.auth.hash_password import HashPassword
+from models.user import User
+from models.product import Product
+from models.department import Department
+from models.aisle import Aisle
+from models.orders import Order
+from models.order_item import OrderItem
+from models.recommendation import Recommendation
+from database.database import get_database_engine
+from auth.hash_password import HashPassword
 
 logger = logging.getLogger(__name__)
 hash_password = HashPassword()

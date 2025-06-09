@@ -2,7 +2,7 @@
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
-from app.models.recommendation import ModelType
+from models.recommendation import ModelType
 
 
 class ProductBase(BaseModel):

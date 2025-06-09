@@ -2,13 +2,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
-from app.auth.authenticate import authenticate
-from app.auth.hash_password import HashPassword
-from app.auth.jwt_handler import create_access_token
-from app.database.database import get_session
-from app.database.config import get_settings
-from app.models.user import User
-from app.schemas.auth import UserSignUp, UserSignIn, TokenResponse, UserResponse
+from auth.authenticate import authenticate
+from auth.hash_password import HashPassword
+from auth.jwt_handler import create_access_token
+from database.database import get_session
+from database.config import get_settings
+from models.user import User
+from schemas.auth import UserSignUp, UserSignIn, TokenResponse, UserResponse
 from typing import Dict
 
 # Получаем настройки приложения

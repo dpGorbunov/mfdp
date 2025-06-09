@@ -2,22 +2,22 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select, func
-from app.database.database import get_session
-from app.models.product import Product
-from app.models.orders import Order
-from app.models.order_item import OrderItem
-from app.models.recommendation import Recommendation
-from app.models.department import Department
-from app.models.aisle import Aisle
-from app.models.recommendation import ModelType
-from app.schemas.recommendation import (
+from database.database import get_session
+from models.product import Product
+from models.orders import Order
+from models.order_item import OrderItem
+from models.recommendation import Recommendation
+from models.department import Department
+from models.aisle import Aisle
+from models.recommendation import ModelType
+from schemas.recommendation import (
     RecommendationResponse,
     OrderHistoryItem,
     UserPreferences,
     ProductBase,
     ProductDetail
 )
-from app.auth.authenticate import authenticate
+from auth.authenticate import authenticate
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 def get_recommendation_service(session: Session):
     """Фабрика для создания сервиса рекомендаций"""
     try:
-        from app.services.recommendation_service import RecommendationService
+        from services.recommendation_service import RecommendationService
         return RecommendationService(session)
     except ImportError as e:
         logger.warning(f"Не удалось загрузить ML движок: {e}")

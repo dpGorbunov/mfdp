@@ -8,9 +8,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlmodel import Session, text, SQLModel
 import psycopg
-from app.database.config import get_settings
-from app.database.database import engine
-from app.auth.hash_password import HashPassword
+from database.config import get_settings
+from database.database import engine
+from auth.hash_password import HashPassword
 
 
 def import_fast(data_dir="data", max_users=None, recreate=True):

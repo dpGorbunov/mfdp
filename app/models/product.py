@@ -3,14 +3,14 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.order_item import OrderItem
-    from app.models.recommendation import Recommendation
-    from app.models.department import Department, DepartmentRead
-    from app.models.aisle import Aisle, AisleRead
+    from models.order_item import OrderItem
+    from models.recommendation import Recommendation
+    from models.department import Department, DepartmentRead
+    from models.aisle import Aisle, AisleRead
 else:
-    from app.models.aisle import Aisle, AisleRead
-    from app.models.department import Department, DepartmentRead
-    from app.models.recommendation import Recommendation
+    from models.aisle import Aisle, AisleRead
+    from models.department import Department, DepartmentRead
+    from models.recommendation import Recommendation
 
 
 class ProductBase(SQLModel):

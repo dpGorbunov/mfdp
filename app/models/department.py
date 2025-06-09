@@ -3,7 +3,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.product import Product
+    from models.product import Product
 
 
 class DepartmentBase(SQLModel):

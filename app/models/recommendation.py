@@ -6,8 +6,8 @@ from datetime import datetime
 from enum import Enum
 
 if TYPE_CHECKING:
-    from app.models.user import User
-    from app.models.product import Product, ProductRead
+    from models.user import User
+    from models.product import Product, ProductRead
 
 
 class ModelType(str, Enum):
@@ -20,9 +20,9 @@ class ModelType(str, Enum):
 class RecommendationBase(SQLModel):
     """Базовая модель рекомендации"""
     user_id: int = Field(foreign_key="users.id", index=True)
-    product_id: int = Field(foreign_key="product.id", index=True)  # Исправлено: было "products.id"
+    product_id: int = Field(foreign_key="product.id", index=True)
     score: float = Field(ge=0.0, le=1.0)
-    model_type: ModelType = Field(index=True)
+    model_type: str = Field(max_length=20, index=True)
 
 
 class Recommendation(RecommendationBase, table=True):

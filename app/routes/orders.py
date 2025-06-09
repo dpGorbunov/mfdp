@@ -1,15 +1,15 @@
 # app/routes/orders.py
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
-from app.database.database import get_session
-from app.models.product import Product
-from app.models.orders import Order
-from app.models.order_item import OrderItem
-from app.models.recommendation import Recommendation
-from app.models.recommendation import ModelType
-from app.schemas.order import OrderCreate, OrderResponse, OrderConfirmation, OrderItemResponse
-from app.auth.authenticate import authenticate
+from sqlmodel import Session, select, func
+from database.database import get_session
+from models.product import Product
+from models.orders import Order
+from models.order_item import OrderItem
+from models.recommendation import Recommendation
+from models.recommendation import ModelType
+from schemas.order import OrderCreate, OrderResponse, OrderConfirmation, OrderItemResponse
+from auth.authenticate import authenticate
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 def get_recommendation_service(session: Session):
     """Фабрика для создания сервиса рекомендаций"""
     try:
-        from app.services.recommendation_service import RecommendationService
+        from services.recommendation_service import RecommendationService
         return RecommendationService(session)
     except ImportError as e:
         logger.warning(f"Не удалось загрузить ML движок: {e}")

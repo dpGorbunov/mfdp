@@ -4,10 +4,10 @@ from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import Field, SQLModel, Relationship
 
 if TYPE_CHECKING:
-    from app.models.orders import Order
-    from app.models.recommendation import Recommendation
+    from models.orders import Order
+    from models.recommendation import Recommendation
 else:
-    from app.models.orders import Order
+    from models.orders import Order
 
 class User(SQLModel, table=True):
     """Модель пользователя"""

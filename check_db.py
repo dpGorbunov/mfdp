@@ -6,7 +6,7 @@ import psycopg
 # Добавляем путь к проекту
 sys.path.insert(0, str(Path(__file__).parent))
 
-from app.database.config import get_settings
+from database.config import get_settings
 
 
 def check_database():

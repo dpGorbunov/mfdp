@@ -3,10 +3,10 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.orders import Order
-    from app.models.product import Product, ProductRead
+    from models.orders import Order
+    from models.product import Product, ProductRead
 else:
-    from app.models.product import Product, ProductRead
+    from models.product import Product, ProductRead
 
 
 class OrderItemBase(SQLModel):

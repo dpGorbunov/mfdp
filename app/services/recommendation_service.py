@@ -12,11 +12,11 @@ import json
 from datetime import datetime, timedelta
 from numpy import bincount, log, sqrt
 
-from app.models.product import Product
-from app.models.orders import Order
-from app.models.order_item import OrderItem
-from app.models.recommendation import ModelType, Recommendation
-from app.database.database import redis_client
+from models.product import Product
+from models.orders import Order
+from models.order_item import OrderItem
+from models.recommendation import ModelType, Recommendation
+from database.database import redis_client
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +265,7 @@ class RecommendationService:
                     user_id=user_id,
                     product_id=rec["product_id"],
                     score=rec["score"],
-                    model_type=model_type
+                    model_type=model_type.value if hasattr(model_type, 'value') else str(model_type)
                 )
                 self.session.add(recommendation)
 
