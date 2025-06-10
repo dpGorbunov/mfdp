@@ -87,6 +87,7 @@ class MLWorker:
         """
         try:
             # Импортируем необходимые модели и сервисы
+            from models.user import User
             from models.recommendation import Recommendation, ModelType
             from models.orders import Order
             from services.recommendation_service import RecommendationService
