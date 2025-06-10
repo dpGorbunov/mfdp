@@ -6,24 +6,50 @@ from database.database import get_session
 from models.product import Product
 from models.orders import Order
 from models.order_item import OrderItem
-from models.recommendation import Recommendation
-from models.recommendation import ModelType
 from schemas.order import OrderCreate, OrderResponse, OrderConfirmation, OrderItemResponse
 from auth.authenticate import authenticate
 import logging
+import pika
+import json
+import uuid
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-def get_recommendation_service(session: Session):
-    """Фабрика для создания сервиса рекомендаций"""
+def send_recommendation_update_to_queue(user_id: int, order_id: int, ordered_products: List[int]) -> bool:
+    """Отправка задачи на асинхронное обновление рекомендаций в RabbitMQ"""
     try:
-        from services.recommendation_service import RecommendationService
-        return RecommendationService(session)
-    except ImportError as e:
-        logger.warning(f"Не удалось загрузить ML движок: {e}")
-        return None
+        credentials = pika.PlainCredentials('rmuser', 'rmpassword')
+        parameters = pika.ConnectionParameters(
+            host='rabbitmq',
+            port=5672,
+            credentials=credentials
+        )
+        connection = pika.BlockingConnection(parameters)
+        channel = connection.channel()
+        channel.queue_declare(queue='ml_task_queue')
+
+        task_data = {
+            "task_id": str(uuid.uuid4()),
+            "task_type": "update_recommendations",
+            "user_id": user_id,
+            "order_id": order_id,
+            "ordered_products": ordered_products,
+            "question": f"Update recommendations for user {user_id} after order {order_id}"  # для совместимости
+        }
+
+        channel.basic_publish(
+            exchange='',
+            routing_key='ml_task_queue',
+            body=json.dumps(task_data)
+        )
+        connection.close()
+        logger.info(f"Recommendation update task sent for user {user_id}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send to RabbitMQ: {e}")
+        return False
 
 
 @router.post("/", response_model=OrderConfirmation)
@@ -33,7 +59,7 @@ async def create_order(
         session: Session = Depends(get_session)
 ):
     """
-    Создать новый заказ
+    Создать новый заказ с асинхронным обновлением рекомендаций
     """
     # Проверяем, что все продукты существуют
     product_ids = [item.product_id for item in order_data.items]
@@ -74,54 +100,20 @@ async def create_order(
         .where(Order.user_id == int(user_id))
     ).one()
 
-    recommendations_updated = False
-
-    # Обновляем рекомендации после создания заказа
-    # Но только если у пользователя есть хотя бы 2 заказа (включая текущий)
+    # Отправляем задачу на обновление рекомендаций если у пользователя >= 2 заказов
+    recommendations_queued = False
     if user_orders_count >= 2:
-        try:
-            recommendation_service = get_recommendation_service(session)
-            if recommendation_service:
-                # Инвалидируем кеш
-                recommendation_service.invalidate_cache(int(user_id))
+        ordered_product_ids = [item.product_id for item in order_items]
+        recommendations_queued = send_recommendation_update_to_queue(
+            int(user_id),
+            order.id,
+            ordered_product_ids
+        )
 
-                # Если это 2-й или 3-й заказ, переобучаем модель
-                if user_orders_count <= 3:
-                    logger.info(f"Переобучение модели для пользователя {user_id} (заказ #{user_orders_count})")
-                    recommendation_service.retrain_model()
-
-                # Генерируем новые рекомендации
-                new_recs = recommendation_service.get_recommendations(
-                    user_id=int(user_id),
-                    model_type=ModelType.COLLABORATIVE,
-                    count=20,  # Генерируем больше
-                    use_cache=False
-                )
-
-                if new_recs:
-                    # Удаляем старые рекомендации
-                    deleted = session.query(Recommendation).filter(
-                        Recommendation.user_id == int(user_id),
-                        Recommendation.model_type == ModelType.COLLABORATIVE
-                    ).delete()
-
-                    # Сохраняем новые рекомендации
-                    for rec in new_recs:
-                        new_rec = Recommendation(
-                            user_id=int(user_id),
-                            product_id=rec["product_id"],
-                            score=rec["score"],
-                            model_type=ModelType.COLLABORATIVE
-                        )
-                        session.add(new_rec)
-
-                    session.commit()
-                    recommendations_updated = True
-                    logger.info(f"Обновлено {len(new_recs)} рекомендаций для пользователя {user_id}, удалено {deleted}")
-
-        except Exception as e:
-            logger.error(f"Не удалось обновить рекомендации: {e}")
-            session.rollback()  # Откатываем только изменения рекомендаций
+        if recommendations_queued:
+            logger.info(f"Задача на обновление рекомендаций отправлена в очередь для пользователя {user_id}")
+        else:
+            logger.warning(f"Не удалось отправить задачу в очередь для пользователя {user_id}")
     else:
         logger.info(f"Пользователь {user_id} сделал первый заказ, рекомендации будут доступны после второго заказа")
 
@@ -138,14 +130,14 @@ async def create_order(
     message = f"Заказ #{order.id} успешно создан"
     if user_orders_count == 1:
         message += ". Сделайте еще один заказ для получения персональных рекомендаций!"
-    elif recommendations_updated:
-        message += ". Рекомендации обновлены!"
+    elif recommendations_queued:
+        message += ". Рекомендации обновляются в фоновом режиме!"
 
     return OrderConfirmation(
         order_id=order.id,
         message=message,
         items=items_response,
-        recommendations_updated=recommendations_updated
+        recommendations_updated=False  # Всегда False, т.к. обновление асинхронное
     )
 
 

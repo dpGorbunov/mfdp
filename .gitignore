@@ -10,8 +10,6 @@ __pycache__
 app/.pytest_cache
 app/.coverage
 
-project_files.txt
-collect_git_files.sh
 
 # Python
 __pycache__/
@@ -40,6 +38,10 @@ Thumbs.db
 dump_project.sh
 project_dump.txt
 App(Автономный интерфейс).js
+collect_rmq_files.sh
+project_files.txt
+collect_git_files.sh
+rmq_integration_files.txt
 
 # Environment
 .env.local

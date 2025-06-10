@@ -33,8 +33,18 @@ services:
     environment:
       - RABBITMQ_USER=rmuser
       - RABBITMQ_PASS=rmpassword
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_NAME=sa
+      - PYTHONPATH=/app
     volumes:
       - ./ml_worker:/app
+      - ./app/models:/app/models:ro
+      - ./app/services:/app/services:ro
+      - ./app/database:/app/database:ro
+      - ./app/schemas:/app/schemas:ro
     depends_on:
       - db
       - rabbitmq
