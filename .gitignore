@@ -7,6 +7,8 @@ App(Автономный интерфейс).js
 data/
 __pycache__
 .env
+app/.pytest_cache
+app/.coverage
 
 project_files.txt
 collect_git_files.sh
